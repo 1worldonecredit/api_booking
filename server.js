@@ -9,7 +9,6 @@ const app = express();
 
 const bcrypt = require('bcrypt');
 // เปิดใช้งาน CORS เพื่อให้ Frontend (พอร์ต 5173) เรียกใช้งานได้
-const jwt = require('jsonwebtoken');
 
 // ตั้งค่า Secret Key สำหรับสร้าง Token (ในระบบจริงควรเก็บไว้ในไฟล์ .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'mySuperSecretKeyForBookingApp2026';
