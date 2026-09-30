@@ -307,6 +307,41 @@ app.post('/api/login', async (req, res) => {
     }
 });
 // =========================================================
+
+// =========================================================
+// 5. API สำหรับหน้า Dashboard (ดึงยอดเงินและคะแนน)
+// =========================================================
+app.get('/api/dashboard/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // ดึงข้อมูลยอดเงิน (accumulated_earning) และคะแนนสะสม (accumulated_spending สมมติ)
+        const result = await pgPool.query(`
+            SELECT accumulated_earning, accumulated_spending
+            FROM users 
+            WHERE id = $1
+        `, [userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลผู้ใช้' });
+        }
+
+        const user = result.rows[0];
+
+        res.json({
+            success: true,
+            wallet: {
+                balance: user.accumulated_earning || 0,
+                points: Math.floor((user.accumulated_spending || 0) / 100) // ตัวอย่างการคำนวณแต้ม
+            },
+            recentTransactions: [] // ส่งอาร์เรย์ว่างไปก่อน เพราะเรายังไม่ได้สร้างระบบประวัติธุรกรรม
+        });
+    } catch (error) {
+        console.error('Dashboard Data Error:', error);
+        res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการดึงข้อมูล' });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
