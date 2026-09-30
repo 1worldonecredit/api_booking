@@ -29,16 +29,20 @@ const pgPool = new Pool({
 // 0. ตั้งค่า CORS (จำกัดโดเมนที่อนุญาตให้เข้าถึง API)
 // ---------------------------------------------------------
 const allowedOrigins = [
-  'https://kinnon.smartsoft.agency',             // โดเมนหลัก
-  'https://useradmin.smartsoft.agency', 
+  'https://kinnon.live',             // โดเมนหลัก
+  'https://useradmin.kinnon.live', 
   'https://apibooking.smartsoft.agency',
-  'https://emp.smartsoft.agency',
+  'https://emp.kinnon.live',
    // โดเมนหลัก (มี www)
  'http://localhost:5173',
   'http://localhost:5174'       // สำหรับทดสอบ Frontend (อื่นๆ)
 ];
 
-// สร้าง Route ทดสอบ
+
+// ==========================================
+// สร้าง Route ทดสอบ 
+// ==========================================
+
 app.get('/api/test', async (req, res) => {
     try {
         const result = await pgPool.query('SELECT NOW()');
@@ -49,6 +53,26 @@ app.get('/api/test', async (req, res) => {
     }
 });
 
+// ==========================================
+// API สำหรับดึงรายชื่อประเทศ  เริ่ม
+// ==========================================
+
+app.get('/api/countries', async (req, res) => {
+    try {
+        const result = await pgPool.query(
+            'SELECT id, iso_code, name_th, name_en, currency_code, flag_image_url FROM countries WHERE is_active = TRUE ORDER BY id ASC'
+        );
+        res.json({ success: true, countries: result.rows });
+    } catch (error) {
+        console.error('Error fetching countries:', error);
+        res.status(500).json({ success: false, message: 'ไม่สามารถดึงข้อมูลประเทศได้' });
+    }
+});
+
+
+// ==========================================
+// API สำหรับดึงรายชื่อประเทศ  สิ้นสุด
+// ==========================================
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
