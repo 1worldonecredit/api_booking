@@ -7,7 +7,7 @@ const cron = require('node-cron');
 
 const app = express();
 
-
+const bcrypt = require('bcrypt');
 // เปิดใช้งาน CORS เพื่อให้ Frontend (พอร์ต 5173) เรียกใช้งานได้
 app.use(cors());
 
