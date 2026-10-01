@@ -28,6 +28,28 @@ const pgPool = new Pool({
     }
 });
 
+// ==========================================
+// API สำหรับบันทึกพิกัดแผนที่ (วางไว้รวมกับ Route อื่นๆ)
+// ==========================================
+app.post('/api/save-location', async (req, res) => {
+    try {
+        // รับค่าที่หน้าบ้าน (React) ส่งมา
+        const { user_id, label, latitude, longitude } = req.body;
+        
+        // บันทึกลงตาราง user_addresses
+        // 🌟 สังเกตว่าใช้ pgPool.query ตามชื่อตัวแปรในไฟล์ของคุณ
+        const newLocation = await pgPool.query(
+            "INSERT INTO user_addresses (user_id, label, latitude, longitude) VALUES ($1, $2, $3, $4) RETURNING *",
+            [user_id, label, latitude, longitude]
+        );
+
+        // ส่งผลลัพธ์กลับไปบอกหน้าบ้าน
+        res.json({ success: true, data: newLocation.rows[0] });
+    } catch (err) {
+        console.error("Error saving location:", err.message);
+        res.status(500).json({ success: false, error: "Database Error" });
+    }
+});
 // ---------------------------------------------------------
 // 0. ตั้งค่า CORS (จำกัดโดเมนที่อนุญาตให้เข้าถึง API)
 // ---------------------------------------------------------
