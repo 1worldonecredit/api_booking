@@ -28,6 +28,36 @@ const pgPool = new Pool({
     }
 });
 
+
+// API สำหรับขอค่ารัศมีการแสดงผลตามพิกัดปัจจุบัน
+app.post('/api/get-display-radius', async (req, res) => {
+    const { lat, lng } = req.body;
+    try {
+        // ใช้ SQL หาระยะทางจากจุดศูนย์กลางที่ Admin ตั้งไว้ 
+        // เช็คว่าผู้ใช้อยู่ในระยะ zone_coverage_km หรือไม่ และดึงค่า display_radius_km ออกมา
+        const query = `
+            SELECT display_radius_km 
+            FROM service_zones 
+            WHERE is_default = FALSE 
+            AND (6371 * acos(cos(radians($1)) * cos(radians(center_lat)) * cos(radians(center_lng) - radians($2)) + sin(radians($1)) * sin(radians(center_lat)))) <= zone_coverage_km
+            ORDER BY zone_coverage_km ASC 
+            LIMIT 1;
+        `;
+        const result = await pgPool.query(query, [lat, lng]);
+
+        if (result.rows.length > 0) {
+            // เจอโซนที่ Admin กำหนดไว้
+            res.json({ success: true, radius: result.rows[0].display_radius_km });
+        } else {
+            // ไม่อยู่ในโซนใดๆ เลย ให้ดึงค่า Default
+            const defaultZone = await pgPool.query("SELECT display_radius_km FROM service_zones WHERE is_default = TRUE LIMIT 1");
+            res.json({ success: true, radius: defaultZone.rows[0].display_radius_km || 50 });
+        }
+    } catch (err) {
+        console.error("Error getting radius:", err.message);
+        res.status(500).json({ success: false, radius: 50 }); // กันเหนียวกรณีเซิร์ฟเวอร์รวน
+    }
+});
 // ==========================================
 // API สำหรับบันทึกพิกัดแผนที่ (วางไว้รวมกับ Route อื่นๆ)
 // ==========================================
