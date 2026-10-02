@@ -108,6 +108,24 @@ app.get('/api/test', async (req, res) => {
     }
 });
 
+
+// ตัวอย่าง API ดึงข้อมูลเมนู (Node.js / Express)
+app.get('/api/sys-menus', async (req, res) => {
+    try {
+        // ดึงเฉพาะเมนูที่เปิดใช้งาน เรียงตามลำดับ
+        const query = `
+            SELECT * FROM sys_menus 
+            WHERE is_active = true 
+            ORDER BY parent_id ASC NULLS FIRST, sort_order ASC
+        `;
+        const result = await db.query(query); // ปรับใช้ตาม Database Client ของคุณ
+        
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Error fetching menus:", error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 // ==========================================
 // API สำหรับดึงรายชื่อประเทศ  เริ่ม
 // ==========================================
