@@ -126,6 +126,70 @@ app.get('/api/sys-menus', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+
+// ==========================================
+// API สำหรับจัดการเมนูระบบ (Menu Management)
+// ==========================================
+
+// 1. ดึงข้อมูลเมนูทั้งหมด (GET)
+app.get('/api/menus', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM sys_menus ORDER BY parent_id NULLS FIRST, sort_order ASC, id ASC'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "ไม่สามารถดึงข้อมูลได้" });
+  }
+});
+
+// 2. สร้างเมนูใหม่ (POST)
+app.post('/api/menus', async (req, res) => {
+  try {
+    const { name, path, component, icon, parentId, useBadge } = req.body;
+    const result = await pool.query(
+      `INSERT INTO sys_menus (menu_name, path, component, icon, parent_id, sort_order) 
+       VALUES ($1, $2, $3, $4, $5, 0) RETURNING *`,
+      [name, path || null, component || null, icon || null, parentId || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "บันทึกไม่ได้" });
+  }
+});
+
+// 3. แก้ไขข้อมูลเมนู (PUT)
+app.put('/api/menus/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, path, component, icon, parentId, useBadge } = req.body;
+    const result = await pool.query(
+      `UPDATE sys_menus SET menu_name = $1, path = $2, component = $3, icon = $4, parent_id = $5 
+       WHERE id = $6 RETURNING *`,
+      [name, path || null, component || null, icon || null, parentId || null, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "อัปเดตไม่ได้" });
+  }
+});
+
+// 4. ลบเมนู (DELETE)
+app.delete('/api/menus/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM sys_menus WHERE parent_id = $1', [id]); // ลบลูกก่อน
+    await pool.query('DELETE FROM sys_menus WHERE id = $1', [id]); // ลบแม่
+    res.json({ message: "ลบสำเร็จ" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "ลบไม่ได้" });
+  }
+});
 // ==========================================
 // API สำหรับดึงรายชื่อประเทศ  เริ่ม
 // ==========================================
